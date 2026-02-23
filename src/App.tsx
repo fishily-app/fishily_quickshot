@@ -1,35 +1,79 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useRef, useState } from "react";
+import { ScreenshotTemplate } from "./ScreenshotTemplate";
+import { exportSvgToPng, readFileAsDataURL } from "./imageHelpers";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const [title, setTitle] = useState("Here is the title");
+  const [subtitle, setSubtitle] = useState("and the subtitle");
+  const [imageDataUrl, setImageDataUrl] = useState<string | undefined>(
+    undefined,
+  );
+
+  const onPickImage: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    void (async () => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        alert("Please choose an image file.");
+        e.target.value = "";
+        return;
+      }
+
+      const dataUrl = await readFileAsDataURL(file);
+      setImageDataUrl(dataUrl);
+
+      e.target.value = "";
+    })();
+  };
+
+  const onExport = () => {
+    void (async () => {
+      const svgEl = svgRef.current;
+      if (!svgEl) {
+        alert("SVG not ready yet. Try again.");
+        return;
+      }
+
+      await exportSvgToPng(svgEl, "fishily-square.png");
+    })();
+  };
 
   return (
-    <>
+    <main>
+      <h1>Fishily Quickshot</h1>
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <ScreenshotTemplate
+          ref={svgRef}
+          title={title}
+          subtitle={subtitle}
+          imageDataUrl={imageDataUrl}
+        />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+      <div>
+        <label>
+          Title
+          <input value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
 
-export default App
+        <label>
+          Subtitle
+          <input
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+          />
+        </label>
+
+        <label>
+          Screenshot image
+          <input type="file" accept="image/*" onChange={onPickImage} />
+          <span className="upload-button">Upload image</span>
+        </label>
+
+        <button onClick={onExport}>Export image</button>
+      </div>
+    </main>
+  );
+}
