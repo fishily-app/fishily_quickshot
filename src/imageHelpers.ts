@@ -1,4 +1,8 @@
 export function readFileAsDataURL(file: File): Promise<string> {
+  return readBlobAsDataURL(file);
+}
+
+export function readBlobAsDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -14,7 +18,7 @@ export function readFileAsDataURL(file: File): Promise<string> {
     reader.onerror = () =>
       reject(reader.error ?? new Error("Failed to read file"));
 
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
 }
 
