@@ -60,7 +60,6 @@ body {
 .quickshot {
   margin: var(--qs-space-main-top) auto 0;
   max-width: var(--qs-layout-width-mobile);
-  min-height: calc(100vh - var(--qs-space-main-top) - var(--qs-space-page-bottom));
   display: flex;
   flex-direction: column;
 }
@@ -231,6 +230,7 @@ body {
 @media (min-width: 1040px) {
   .quickshot {
     max-width: var(--qs-layout-width-desktop);
+    min-height: calc(100vh - var(--qs-space-main-top) - var(--qs-space-page-bottom));
   }
 
   .quickshot__layout {
