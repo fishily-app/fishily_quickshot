@@ -75,19 +75,15 @@ Playwright artifacts are written to `output/playwright/`:
 
 ## CI/CD (GitHub Actions)
 
-This repo includes a GitHub Actions workflow at `.github/workflows/deploy.yml`.
+This repo uses one workflow at `.github/workflows/deploy.yml` with two jobs:
 
-On push to `main`, it runs:
-
-1. `npm ci`
-2. `npm run lint`
-3. `npm test`
-4. `npm run build`
-5. deploys `dist/` to GitHub Pages
-
-You can also trigger the workflow manually via `workflow_dispatch`.
-
-Note: CI uses `npm ci` (instead of `npm install`) for lockfile-accurate, reproducible installs.
+- `ci`
+  - runs on pull requests to `main` and pushes to `main`
+  - runs lint, unit tests, Playwright e2e, and build
+- `deploy`
+  - runs only on push to `main`
+  - depends on successful `ci`
+  - deploys the built `dist/` artifact to GitHub Pages
 
 ## License
 
