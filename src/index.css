@@ -98,7 +98,11 @@ body {
 .quickshot__note {
   margin: auto 0 0;
   padding-top: var(--qs-space-note-top);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   font-size: var(--qs-font-size-note);
   color: var(--qs-color-muted);
 }

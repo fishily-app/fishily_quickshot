@@ -47,7 +47,7 @@ describe("App", () => {
     expect(screen.getByRole("radio", { name: "Square (1:1)" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Phone bottom" })).toBeChecked();
     expect(
-      screen.getByRole("button", { name: "Export image" }),
+      screen.getByRole("button", { name: "Export image (PNG)" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Fishily" })).toHaveAttribute(
       "href",
@@ -140,7 +140,7 @@ describe("App", () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "Export image" }));
+    await user.click(screen.getByRole("button", { name: "Export image (PNG)" }));
     await waitFor(() => {
       expect(mockExportSvgToPng).toHaveBeenCalledTimes(1);
     });

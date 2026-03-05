@@ -171,7 +171,7 @@ export default function App() {
           </fieldset>
 
           <button className="button button--export" onClick={onExport}>
-            Export image
+            Export image (PNG)
           </button>
         </div>
 
@@ -189,10 +189,20 @@ export default function App() {
       </div>
 
       <p className="quickshot__note">
-        Made by{" "}
+        <span>Made by</span>
         <a href="https://fishilyapp.com" target="_blank" rel="noreferrer">
           Fishily
         </a>
+        <span aria-hidden="true">•</span>
+        <span>View the code on</span>
+        <a
+          href="https://github.com/fishily-app/fishily_quickshot"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitHub
+        </a>
+        <span>(MIT)</span>
       </p>
     </main>
   );
