@@ -8,6 +8,20 @@
       name="description"
       content="Fishily Quickshot helps you create social-ready screenshot graphics with customizable layout, phone placement, and export."
     />
+    <script>
+      (() => {
+        const storageKey = "qs-theme";
+        const storedTheme = window.localStorage.getItem(storageKey);
+        const theme =
+          storedTheme === "light" || storedTheme === "dark"
+            ? storedTheme
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <title>Fishily Quickshot</title>
   </head>
   <body>
