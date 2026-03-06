@@ -4,10 +4,16 @@ import {
   type Aspect,
   type ScreenshotType,
 } from "./ScreenshotTemplate";
+import githubIcon from "./assets/logo-github.svg";
+import moonIcon from "./assets/moon.svg";
 import defaultPreviewImage from "./assets/screenshot-example.png?inline";
+import sunIcon from "./assets/sun.svg";
 import { exportSvgToPng, readFileAsDataURL } from "./imageHelpers";
 
 export const DEFAULT_BG = "#f9f9ff";
+const THEME_STORAGE_KEY = "qs-theme";
+
+type ThemeMode = "light" | "dark";
 
 function normalizeHexColor(value: string): string | null {
   const trimmed = value.trim();
@@ -23,6 +29,11 @@ function normalizeHexColor(value: string): string | null {
   return null;
 }
 
+function resolveInitialTheme(): ThemeMode {
+  const documentTheme = document.documentElement.dataset.theme;
+  return documentTheme === "dark" ? "dark" : "light";
+}
+
 export default function App() {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -35,6 +46,9 @@ export default function App() {
   const [aspect, setAspect] = useState<Aspect>("square");
   const [backgroundColorInput, setBackgroundColorInput] = useState(DEFAULT_BG);
   const [previewRenderKey, setPreviewRenderKey] = useState(0);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() =>
+    resolveInitialTheme(),
+  );
 
   const normalizedBackgroundColor = normalizeHexColor(backgroundColorInput);
   const resolvedBackgroundColor = normalizedBackgroundColor ?? DEFAULT_BG;
@@ -53,6 +67,15 @@ export default function App() {
       cancelAnimationFrame(frameId);
     };
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+
+    return () => {
+      delete document.documentElement.dataset.theme;
+    };
+  }, [themeMode]);
 
   const onPickImage: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const inputEl = e.currentTarget;
@@ -87,7 +110,36 @@ export default function App() {
 
   return (
     <main className="quickshot">
-      <h1 className="quickshot__title">Fishily Quickshot</h1>
+      <header className="quickshot__header">
+        <h1 className="quickshot__title">Fishily Quickshot</h1>
+        <div className="quickshot__header-actions">
+          <button
+            type="button"
+            className="quickshot__icon-button"
+            aria-label={`Switch to ${themeMode === "light" ? "dark" : "light"} mode`}
+            onClick={() =>
+              setThemeMode((current) =>
+                current === "light" ? "dark" : "light",
+              )
+            }
+          >
+            <img
+              src={themeMode === "light" ? moonIcon : sunIcon}
+              alt="Theme icon"
+              aria-hidden="true"
+            />
+          </button>
+          <a
+            className="quickshot__icon-button quickshot__icon-link"
+            href="https://github.com/fishily-app/fishily_quickshot"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View source on GitHub"
+          >
+            <img src={githubIcon} alt="GitHub icon" aria-hidden="true" />
+          </a>
+        </div>
+      </header>
       <div className="quickshot__layout">
         <div className="quickshot__form">
           <label className="field">
@@ -203,20 +255,10 @@ export default function App() {
       </div>
 
       <p className="quickshot__note">
-        <span>Made by</span>
+        <span>Made by the team at</span>
         <a href="https://fishilyapp.com" target="_blank" rel="noreferrer">
           Fishily
         </a>
-        <span aria-hidden="true">•</span>
-        <span>View the code on</span>
-        <a
-          href="https://github.com/fishily-app/fishily_quickshot"
-          target="_blank"
-          rel="noreferrer"
-        >
-          GitHub
-        </a>
-        <span>(MIT)</span>
       </p>
     </main>
   );

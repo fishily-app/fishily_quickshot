@@ -28,11 +28,29 @@ function getBackgroundRect(container: HTMLElement): SVGRectElement {
 
 describe("App", () => {
   beforeEach(() => {
+    window.localStorage.clear();
     mockExportSvgToPng.mockReset();
     mockReadFileAsDataURL.mockReset();
     mockExportSvgToPng.mockResolvedValue(undefined);
     mockReadFileAsDataURL.mockResolvedValue("data:image/png;base64,uploaded");
     vi.spyOn(window, "alert").mockImplementation(() => {});
+    const matchMediaMock = vi.fn<(query: string) => MediaQueryList>().mockImplementation(
+      (query: string) =>
+        ({
+          matches: false,
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as MediaQueryList,
+    );
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: matchMediaMock,
+    });
   });
 
   it("renders primary features and default controls", () => {
@@ -49,12 +67,29 @@ describe("App", () => {
     expect(
       screen.getByRole("button", { name: "Export image (PNG)" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Fishily" })).toHaveAttribute(
-      "href",
-      "https://fishilyapp.com",
-    );
+    expect(
+      screen.getByRole("button", { name: "Switch to dark mode" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "View source on GitHub" }),
+    ).toHaveAttribute("href", "https://github.com/fishily-app/fishily_quickshot");
+    expect(document.documentElement.dataset.theme).toBe("light");
 
     expect(getSvg(container).getAttribute("viewBox")).toBe("0 0 1080 1080");
+  });
+
+  it("toggles the theme from the header control", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const themeButton = screen.getByRole("button", { name: "Switch to dark mode" });
+    await user.click(themeButton);
+
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(window.localStorage.getItem("qs-theme")).toBe("dark");
+    expect(
+      screen.getByRole("button", { name: "Switch to light mode" }),
+    ).toBeInTheDocument();
   });
 
   it("updates title and subtitle in the SVG preview", async () => {

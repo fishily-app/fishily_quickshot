@@ -94,6 +94,8 @@ async function readScenarioMetrics(
 test("core UI controls and orientation behavior", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Fishily Quickshot" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View source on GitHub" })).toBeVisible();
 
   const bottom = SCENARIOS[0];
   const top = SCENARIOS[1];
@@ -101,6 +103,9 @@ test("core UI controls and orientation behavior", async ({ page }, testInfo) => 
   await applyScenario(page, bottom);
   const bottomMetrics = await readScenarioMetrics(page, bottom.name);
 
+  await page.locator(".quickshot__header").screenshot({
+    path: testInfo.outputPath("header-light.png"),
+  });
   await page.locator(".svg-square").screenshot({
     path: testInfo.outputPath("core-bottom-template.png"),
   });
@@ -125,6 +130,19 @@ test("core UI controls and orientation behavior", async ({ page }, testInfo) => 
     body: Buffer.from(JSON.stringify({ bottomMetrics, topMetrics }, null, 2)),
     contentType: "application/json",
   });
+});
+
+test("theme toggle switches between light and dark chrome", async ({ page }) => {
+  await page.goto("/");
+
+  const themeButton = page.getByRole("button", { name: "Switch to dark mode" });
+  const body = page.locator("body");
+
+  await expect(body).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await themeButton.click();
+  await expect(page.getByRole("button", { name: "Switch to light mode" })).toBeVisible();
+  await expect(body).toHaveCSS("background-color", "rgb(24, 26, 29)");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
 test("visual scenario matrix artifacts for comparison", async ({ page }, testInfo) => {
@@ -176,4 +194,46 @@ test("visual scenario matrix artifacts for comparison", async ({ page }, testInf
   expect(metrics).toHaveLength(SCENARIOS.length);
   expect(metrics.every((item) => item.viewBox !== null)).toBe(true);
   expect(metrics.every((item) => item.phoneHeight !== null)).toBe(true);
+});
+
+test("dark mode updates app chrome without changing SVG content colors", async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+
+  const body = page.locator("body");
+  const titleInput = page.getByLabel("Title", { exact: true });
+  const uploadButton = page.locator(".button--upload");
+  const preview = page.locator(".svg-square");
+
+  await expect(body).toHaveCSS("background-color", "rgb(24, 26, 29)");
+  await expect(body).toHaveCSS("color", "rgb(207, 214, 220)");
+  await expect(titleInput).toHaveCSS("background-color", "rgb(24, 26, 29)");
+  await expect(titleInput).toHaveCSS("color", "rgb(207, 214, 220)");
+  await expect(uploadButton).toHaveCSS("background-color", "rgb(24, 26, 29)");
+  await expect(preview).toHaveCSS("border-color", "rgb(56, 61, 67)");
+
+  await page.locator("main").screenshot({
+    path: testInfo.outputPath("dark-mode-page.png"),
+  });
+  await preview.screenshot({
+    path: testInfo.outputPath("dark-mode-preview.png"),
+  });
+
+  const svgFills = await preview.evaluate((svg: SvgLikeElement) => {
+    const titleText = svg.querySelector('text[fill="#000000"]');
+    const subtitleText = svg.querySelector('text[fill="#707070"]');
+    const backgroundRect = svg.querySelector("rect");
+
+    return {
+      titleFill: titleText?.getAttribute("fill") ?? null,
+      subtitleFill: subtitleText?.getAttribute("fill") ?? null,
+      backgroundFill: backgroundRect?.getAttribute("fill") ?? null,
+    };
+  });
+
+  expect(svgFills.titleFill).toBe("#000000");
+  expect(svgFills.subtitleFill).toBe("#707070");
+  expect(svgFills.backgroundFill).toBe("#f9f9ff");
 });
