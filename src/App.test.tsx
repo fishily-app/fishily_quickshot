@@ -107,7 +107,7 @@ describe("App", () => {
     );
 
     await user.click(screen.getByRole("radio", { name: "Phone top" }));
-    expect(previewImage).toHaveAttribute(
+    expect(container.querySelector(".svg-square image")).toHaveAttribute(
       "preserveAspectRatio",
       "xMidYMax slice",
     );
@@ -138,7 +138,7 @@ describe("App", () => {
 
   it("exports the current SVG with the expected filename", async () => {
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Export image (PNG)" }));
     await waitFor(() => {
@@ -149,7 +149,9 @@ describe("App", () => {
       SVGSVGElement,
       string,
     ];
-    expect(svgArg).toBe(getSvg(container));
+    expect(svgArg).toBeInstanceOf(SVGSVGElement);
+    expect(svgArg).toHaveClass("svg-square");
+    expect(svgArg.getAttribute("viewBox")).toBe("0 0 1080 1080");
     expect(filenameArg).toBe("fishily-square.png");
   });
 });

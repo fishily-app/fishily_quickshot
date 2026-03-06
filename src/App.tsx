@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ScreenshotTemplate,
   type Aspect,
@@ -34,12 +34,25 @@ export default function App() {
   const [type, setType] = useState<ScreenshotType>("bottom");
   const [aspect, setAspect] = useState<Aspect>("square");
   const [backgroundColorInput, setBackgroundColorInput] = useState(DEFAULT_BG);
+  const [previewRenderKey, setPreviewRenderKey] = useState(0);
 
   const normalizedBackgroundColor = normalizeHexColor(backgroundColorInput);
   const resolvedBackgroundColor = normalizedBackgroundColor ?? DEFAULT_BG;
   const isBackgroundInvalid =
     backgroundColorInput.trim().length > 0 &&
     normalizedBackgroundColor === null;
+
+  useEffect(() => {
+    // Safari can paint the SVG preview in the wrong vertical position on the
+    // first render. Remounting it once after mount forces a repaint that fixes it.
+    const frameId = requestAnimationFrame(() => {
+      setPreviewRenderKey(1);
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   const onPickImage: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const inputEl = e.currentTarget;
@@ -177,6 +190,7 @@ export default function App() {
 
         <div className="quickshot__preview">
           <ScreenshotTemplate
+            key={`${previewRenderKey}-${aspect}-${type}`}
             svgRef={svgRef}
             title={title}
             subtitle={subtitle}
