@@ -34,7 +34,6 @@
   --qs-preview-height-desktop: 520px;
   --qs-layout-width-mobile: 520px;
   --qs-layout-width-desktop: 1100px;
-  --qs-layout-breakpoint-desktop: 1040px;
   --qs-layout-gap-desktop: 1.25rem;
 }
 
@@ -297,7 +296,8 @@ body {
   border-radius: var(--qs-radius);
 }
 
-@media (min-width: 1040px) {
+/* 2 x 520px columns + 20px gap + 2 x 16px page padding = 1092px viewport */
+@media (min-width: 1092px) {
   .quickshot {
     max-width: var(--qs-layout-width-desktop);
     min-height: calc(
