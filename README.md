@@ -1,5 +1,7 @@
 # Fishily Quickshot
 
+![Fishily Quickshot app preview](docs/images/fishily-quickshot-preview.png)
+
 Fishily Quickshot is a lightweight React app for generating social-ready screenshot graphics with:
 
 - editable title and subtitle
