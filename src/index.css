@@ -253,6 +253,7 @@ body {
 .switch__option {
   position: relative;
   flex: 1;
+  display: flex;
 }
 
 .switch__option input[type="radio"] {
@@ -263,13 +264,17 @@ body {
 }
 
 .switch__label {
-  display: block;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
   border: var(--qs-border);
   border-radius: var(--qs-radius);
   padding: 0.6em var(--qs-space-control-x);
   font-size: 16px;
   font-weight: 400;
   text-align: center;
+  line-height: 1.2;
   background: transparent;
   color: var(--qs-color-text);
   cursor: pointer;

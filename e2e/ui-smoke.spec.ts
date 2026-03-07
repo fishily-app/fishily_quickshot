@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 type Scenario = {
   name: string;
-  aspectLabel: "Square (1:1)" | "Portrait (4:5)";
+  aspectLabel: "Square (1:1)" | "Portrait (4:5)" | "Story (9:16)";
   typeLabel: "Phone bottom" | "Phone top";
   backgroundHex: string;
 };
@@ -10,9 +10,13 @@ type Scenario = {
 type ScenarioMetrics = {
   scenario: string;
   viewBox: string | null;
+  canvasWidth: number | null;
+  canvasHeight: number | null;
   titleY: number | null;
   subtitleY: number | null;
+  phoneX: number | null;
   phoneY: number | null;
+  phoneWidth: number | null;
   phoneHeight: number | null;
   preserveAspectRatio: string | null;
   backgroundFill: string | null;
@@ -48,6 +52,18 @@ const SCENARIOS: Scenario[] = [
     typeLabel: "Phone top",
     backgroundHex: "#000000",
   },
+  {
+    name: "story-bottom-light",
+    aspectLabel: "Story (9:16)",
+    typeLabel: "Phone bottom",
+    backgroundHex: "#f9f9ff",
+  },
+  {
+    name: "story-top-light",
+    aspectLabel: "Story (9:16)",
+    typeLabel: "Phone top",
+    backgroundHex: "#f9f9ff",
+  },
 ];
 
 async function applyScenario(page: Page, scenario: Scenario) {
@@ -75,13 +91,19 @@ async function readScenarioMetrics(
     const titleText = svg.querySelector('text[fill="#000000"]');
     const subtitleText = svg.querySelector('text[fill="#707070"]');
     const phoneContent = svg.querySelector("image, rect[fill='#151518']");
+    const viewBox = svg.getAttribute("viewBox");
+    const [, , width, height] = viewBox?.split(/\s+/).map(Number) ?? [];
 
     return {
       scenario,
-      viewBox: svg.getAttribute("viewBox"),
+      viewBox,
+      canvasWidth: Number.isFinite(width) ? width : null,
+      canvasHeight: Number.isFinite(height) ? height : null,
       titleY: titleText ? Number(titleText.getAttribute("y")) : null,
       subtitleY: subtitleText ? Number(subtitleText.getAttribute("y")) : null,
+      phoneX: phoneContent ? Number(phoneContent.getAttribute("x")) : null,
       phoneY: phoneContent ? Number(phoneContent.getAttribute("y")) : null,
+      phoneWidth: phoneContent ? Number(phoneContent.getAttribute("width")) : null,
       phoneHeight: phoneContent ? Number(phoneContent.getAttribute("height")) : null,
       preserveAspectRatio: phoneContent
         ? phoneContent.getAttribute("preserveAspectRatio")
@@ -194,6 +216,55 @@ test("visual scenario matrix artifacts for comparison", async ({ page }, testInf
   expect(metrics).toHaveLength(SCENARIOS.length);
   expect(metrics.every((item) => item.viewBox !== null)).toBe(true);
   expect(metrics.every((item) => item.phoneHeight !== null)).toBe(true);
+});
+
+test("story aspect keeps text above the phone and mirrors vertically", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+
+  const bottom = SCENARIOS.find((scenario) => scenario.name === "story-bottom-light");
+  const top = SCENARIOS.find((scenario) => scenario.name === "story-top-light");
+
+  expect(bottom).toBeDefined();
+  expect(top).toBeDefined();
+
+  await applyScenario(page, bottom!);
+  const bottomMetrics = await readScenarioMetrics(page, bottom!.name);
+  await page.locator(".svg-square").screenshot({
+    path: testInfo.outputPath("story-bottom-template.png"),
+  });
+
+  await applyScenario(page, top!);
+  const topMetrics = await readScenarioMetrics(page, top!.name);
+  await page.locator(".svg-square").screenshot({
+    path: testInfo.outputPath("story-top-template.png"),
+  });
+
+  expect(bottomMetrics.viewBox).toBe("0 0 1080 1920");
+  expect(topMetrics.viewBox).toBe("0 0 1080 1920");
+  expect(bottomMetrics.canvasWidth).toBe(1080);
+  expect(bottomMetrics.canvasHeight).toBe(1920);
+  expect(bottomMetrics.titleY).not.toBeNull();
+  expect(bottomMetrics.subtitleY).not.toBeNull();
+  expect(bottomMetrics.phoneY).not.toBeNull();
+  expect(bottomMetrics.phoneHeight).not.toBeNull();
+  expect(bottomMetrics.phoneX).not.toBeNull();
+  expect(bottomMetrics.phoneWidth).not.toBeNull();
+  expect(bottomMetrics.subtitleY!).toBeLessThan(bottomMetrics.phoneY!);
+  expect(bottomMetrics.phoneY! + bottomMetrics.phoneHeight!).toBeGreaterThan(
+    bottomMetrics.canvasHeight!,
+  );
+  expect(
+    Math.abs(
+      (bottomMetrics.phoneX! + bottomMetrics.phoneWidth! / 2) -
+        bottomMetrics.canvasWidth! / 2,
+    ),
+  ).toBeLessThan(1);
+  expect(topMetrics.phoneY!).toBeLessThan(bottomMetrics.phoneY!);
+  expect(topMetrics.titleY!).toBeGreaterThan(bottomMetrics.titleY!);
+  expect(bottomMetrics.preserveAspectRatio).toBe("xMidYMin slice");
+  expect(topMetrics.preserveAspectRatio).toBe("xMidYMax slice");
 });
 
 test("dark mode updates app chrome without changing SVG content colors", async ({

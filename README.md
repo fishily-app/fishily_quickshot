@@ -6,8 +6,8 @@ Fishily Quickshot is a lightweight React app for generating social-ready screens
 
 - editable title and subtitle
 - configurable background color (hex)
-- square (`1:1`) and portrait (`4:5`) layouts
-- phone placement modes (`Phone bottom` / `Phone top`)
+- square (`1:1`), portrait (`4:5`), and story (`9:16`) layouts
+- mirrored phone placement modes (`Phone bottom` / `Phone top`)
 - image upload and PNG export
 
 ## Tech stack

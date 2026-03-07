@@ -1,6 +1,6 @@
 import { useId, useMemo, type Ref } from "react";
 
-export type Aspect = "square" | "portrait";
+export type Aspect = "square" | "portrait" | "story";
 export type ScreenshotType = "top" | "bottom";
 
 export type ScreenshotTemplateProps = {
@@ -13,19 +13,76 @@ export type ScreenshotTemplateProps = {
   svgRef?: Ref<SVGSVGElement>;
 };
 
-const SIZES: Record<Aspect, { w: number; h: number }> = {
-  square: { w: 1080, h: 1080 },
-  portrait: { w: 1080, h: 1350 },
+type ScaleRange = {
+  scale: number;
+  min: number;
+  max: number;
 };
 
-const PHONE_WIDTH_BOOST_BY_ASPECT: Record<Aspect, number> = {
-  square: 1.26,
-  portrait: 1.1,
+type GapScaleRange = ScaleRange & {
+  offset: number;
 };
+
+type AspectLayout = {
+  size: { w: number; h: number };
+  phoneWidthBoost: number;
+  phoneScale: number;
+  titleFontSize: ScaleRange;
+  textEdgeInset: ScaleRange;
+  hiddenEdge: ScaleRange;
+  titleSubtitleGap: ScaleRange;
+  sectionGap: GapScaleRange;
+  textShiftDown: ScaleRange;
+  minTextPhoneGap: ScaleRange;
+};
+
+const ASPECT_LAYOUTS: Record<Aspect, AspectLayout> = {
+  square: {
+    size: { w: 1080, h: 1080 },
+    phoneWidthBoost: 1.26,
+    phoneScale: 1,
+    titleFontSize: { scale: 0.05, min: 32, max: 58 },
+    textEdgeInset: { scale: 0.02, min: 14, max: 32 },
+    hiddenEdge: { scale: 0.018, min: 12, max: 28 },
+    titleSubtitleGap: { scale: 1.02, min: 34, max: 64 },
+    sectionGap: { scale: 0.78, min: 24, max: 46, offset: 18 },
+    textShiftDown: { scale: 0.012, min: 8, max: 18 },
+    minTextPhoneGap: { scale: 0.72, min: 22, max: 40 },
+  },
+  portrait: {
+    size: { w: 1080, h: 1350 },
+    phoneWidthBoost: 1.1,
+    phoneScale: 1,
+    titleFontSize: { scale: 0.05, min: 32, max: 58 },
+    textEdgeInset: { scale: 0.02, min: 14, max: 32 },
+    hiddenEdge: { scale: 0.018, min: 12, max: 28 },
+    titleSubtitleGap: { scale: 1.02, min: 34, max: 64 },
+    sectionGap: { scale: 0.78, min: 24, max: 46, offset: 18 },
+    textShiftDown: { scale: 0.012, min: 8, max: 18 },
+    minTextPhoneGap: { scale: 0.72, min: 22, max: 40 },
+  },
+  story: {
+    size: { w: 1080, h: 1920 },
+    phoneWidthBoost: 1.04,
+    phoneScale: 0.950309,
+    titleFontSize: { scale: 0.04656, min: 43, max: 81 },
+    textEdgeInset: { scale: 0.028518, min: 38, max: 69 },
+    hiddenEdge: { scale: 0.072, min: 96, max: 144 },
+    titleSubtitleGap: { scale: 0.98, min: 62, max: 92 },
+    sectionGap: { scale: 0.03, min: 40, max: 68, offset: 18 },
+    textShiftDown: { scale: 0, min: 0, max: 0 },
+    minTextPhoneGap: { scale: 0.82, min: 64, max: 96 },
+  },
+};
+
 const DEVICE_ASPECT_RATIO = 2.16;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function resolveScale(value: number, range: ScaleRange): number {
+  return clamp(value * range.scale, range.min, range.max);
 }
 
 function dTopRoundedBottomSquare(
@@ -73,28 +130,38 @@ export function ScreenshotTemplate({
   backgroundColor = "#f9f9ff",
   svgRef,
 }: ScreenshotTemplateProps) {
-  const { w: W, h: H } = SIZES[aspect];
+  const layout = ASPECT_LAYOUTS[aspect];
+  const { w: W, h: H } = layout.size;
 
   const geometry = useMemo(() => {
-    const titleFontSize = clamp(H * 0.05, 32, 58);
+    const titleFontSize = resolveScale(H, layout.titleFontSize);
     const subtitleFontSize = titleFontSize;
-    const textEdgeInset = clamp(H * 0.02, 14, 32);
-    const hiddenEdge = clamp(H * 0.018, 12, 28);
-    const titleSubtitleGap = clamp(titleFontSize * 1.02, 34, 64);
+    const textEdgeInset = resolveScale(H, layout.textEdgeInset);
+    const hiddenEdge = resolveScale(H, layout.hiddenEdge);
+    const titleSubtitleGap = clamp(
+      titleFontSize * layout.titleSubtitleGap.scale,
+      layout.titleSubtitleGap.min,
+      layout.titleSubtitleGap.max,
+    );
     const subtitleDescender = subtitleFontSize * 0.28;
     const textBlockHeight =
       titleFontSize + titleSubtitleGap + subtitleDescender;
-    const sectionGap = clamp(titleFontSize * 0.78, 24, 46) + 18;
-    const textShiftDown = clamp(H * 0.012, 8, 18);
+    const sectionGap =
+      clamp(
+        titleFontSize * layout.sectionGap.scale,
+        layout.sectionGap.min,
+        layout.sectionGap.max,
+      ) + layout.sectionGap.offset;
+    const textShiftDown = resolveScale(H, layout.textShiftDown);
 
-    const phoneWidthBoost = PHONE_WIDTH_BOOST_BY_ASPECT[aspect];
     const visiblePhoneHeight =
       H - textEdgeInset * 2 - textBlockHeight - sectionGap;
-    const screenH = visiblePhoneHeight + hiddenEdge;
-    const screenW = (screenH / DEVICE_ASPECT_RATIO) * phoneWidthBoost;
+    const scaledVisiblePhoneHeight = visiblePhoneHeight * layout.phoneScale;
+    const screenH = scaledVisiblePhoneHeight + hiddenEdge;
+    const screenW = (screenH / DEVICE_ASPECT_RATIO) * layout.phoneWidthBoost;
     const screenX = W / 2 - screenW / 2;
 
-    const baseScreenYBottom = H - visiblePhoneHeight;
+    const baseScreenYBottom = H - scaledVisiblePhoneHeight;
     const topBandEnd = baseScreenYBottom - sectionGap;
     const topBandHeight = Math.max(0, topBandEnd - textEdgeInset);
     const textTopYBottom =
@@ -104,7 +171,11 @@ export function ScreenshotTemplate({
     const titleYBottom = textTopYBottom + titleFontSize;
     const subtitleYBottom = titleYBottom + titleSubtitleGap;
     const subtitleBottomY = subtitleYBottom + subtitleDescender;
-    const minBottomTextPhoneGap = clamp(titleFontSize * 0.72, 22, 40);
+    const minBottomTextPhoneGap = clamp(
+      titleFontSize * layout.minTextPhoneGap.scale,
+      layout.minTextPhoneGap.min,
+      layout.minTextPhoneGap.max,
+    );
     const adjustedScreenYBottom = Math.max(
       baseScreenYBottom,
       subtitleBottomY + minBottomTextPhoneGap,
@@ -149,7 +220,7 @@ export function ScreenshotTemplate({
       outerStrokeWidth,
       imageBleed,
     };
-  }, [W, H, aspect, type]);
+  }, [W, H, layout, type]);
 
   const clipId = useId();
   const shadowId = useId();
