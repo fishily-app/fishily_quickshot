@@ -63,6 +63,9 @@ describe("App", () => {
     expect(screen.getByLabelText("Subtitle")).toBeInTheDocument();
     expect(screen.getByLabelText("Custom background hex")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Square (1:1)" })).toBeChecked();
+    expect(
+      screen.getByRole("radio", { name: "Story (9:16)" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Phone bottom" })).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Export image (PNG)" }),
@@ -142,6 +145,13 @@ describe("App", () => {
     );
 
     await user.click(screen.getByRole("radio", { name: "Phone top" }));
+    expect(container.querySelector(".svg-square image")).toHaveAttribute(
+      "preserveAspectRatio",
+      "xMidYMax slice",
+    );
+
+    await user.click(screen.getByRole("radio", { name: "Story (9:16)" }));
+    expect(getSvg(container).getAttribute("viewBox")).toBe("0 0 1080 1920");
     expect(container.querySelector(".svg-square image")).toHaveAttribute(
       "preserveAspectRatio",
       "xMidYMax slice",

@@ -207,6 +207,17 @@ export default function App() {
               />
               <span className="switch__label">Portrait (4:5)</span>
             </label>
+
+            <label className="switch__option">
+              <input
+                type="radio"
+                name="aspect-ratio"
+                value="story"
+                checked={aspect === "story"}
+                onChange={() => setAspect("story")}
+              />
+              <span className="switch__label">Story (9:16)</span>
+            </label>
           </fieldset>
 
           <fieldset className="switch">
